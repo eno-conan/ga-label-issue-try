@@ -2,13 +2,13 @@ name: "Label new pull requests Try"
 description: "Add a label when a new PR is opened Try."
 author: "eno-conan"
 
-# inputs:
-#   gh-token:
-#     description: 'The GitHub token for authentication.'
-#     required: true
-#   label:
-#     description: 'The label to be applied to the pull request.'
-#     required: true
+inputs:
+  gh-token:
+    description: 'The GitHub token for authentication.'
+    required: true
+  label:
+    description: 'The label to be applied to the pull request.'
+    required: true
 
 runs:
   using: "node16"
