@@ -202,7 +202,7 @@ class Diff {
                 } else if (line.startsWith('+')) {
                     // 「+# 環境によって制御」などと記載された行
                     lineCounter++;
-                    this.addFileChange(currentFile, line);
+                    this.addFileChange(currentFile, lineCounter);
                 } else if (!line.startsWith('-')) {
                     // 「-# 環境によって設定制御」などと記載された行
                     lineCounter++;
