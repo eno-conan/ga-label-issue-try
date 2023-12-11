@@ -30887,24 +30887,25 @@ async function run() {
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
     // Add new comments to the PR
     // for (const comment of commentsToAdd) {
-    for (const comment of issuesNotInDiff) {
+    for (const comment of inlineComments) {
         try {
             await octokit.rest.pulls.createReviewComment({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 pull_number: github_1.context.issue.number,
                 commit_id: pullRequest.head.sha,
-                // path: comment.path,
-                path: comment.file,
+                path: comment.path,
+                // path: comment.file,
                 side: "RIGHT",
                 line: comment.line,
-                body: comment.message
+                body: comment.body
             });
         }
         catch (error) {
             (0, core_1.setFailed)((_e = error === null || error === void 0 ? void 0 : error.message) !== null && _e !== void 0 ? _e : "Unknown error");
         }
     }
+    console.log('Processing completed.');
 }
 exports.run = run;
 if (!process.env.JEST_WORKER_ID) {
@@ -31009,6 +31010,7 @@ class DiffFile {
 }
 class Comment {
     constructor(issue) {
+        console.log(issue);
         this.path = issue.file;
         this.line = issue.line;
         this.body = '<table><thead><tr><th>Level</th><th>Message</th></tr></thead><tbody>';
@@ -31016,7 +31018,7 @@ class Comment {
         //     // return `<tr><td>${levelIcon[issue.level]}</td><td>${issue.message}</td></tr>`;
         //     return `<tr><td>info</td><td>${issue.message}</td></tr>`;
         // }).join('');
-        this.body += '</tbody></table><!-- Flutter Analyze Commenter: issue -->';
+        this.body += '</tbody></table><!-- Ruff Analyze Commenter: issue -->';
     }
 }
 
