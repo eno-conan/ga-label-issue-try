@@ -146,6 +146,7 @@ function filterIssuesByDiff(diff: Diff, issues: Issue[]) {
     const issuesNotInDiff: Issue[] = [];
 
     for (const issue of issues) {
+        console.log(issue)
         if (diff.fileHasChange(issue.file, issue.line)) {
             issuesInDiff.push(issue);
         } else {
@@ -211,6 +212,7 @@ class Diff {
     }
 
     addFileChange(fileName: string, line: number) {
+        console.log(this.files)
         if (!this.files[fileName]) {
             this.files[fileName] = new DiffFile(fileName);
         }
@@ -218,13 +220,16 @@ class Diff {
     }
 
     fileHasChange(fileName: string, line: number) {
+        console.log(this.files)
+        console.log(this.files[fileName])
+        console.log(this.files[fileName].hasChange(line))
         return this.files[fileName] && this.files[fileName].hasChange(line);
     }
 }
 
 class DiffFile {
     fileName: string;
-    changes: number[];
+    changes: any[];
     constructor(file: string) {
         this.fileName = file;
         this.changes = [];
