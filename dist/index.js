@@ -30870,8 +30870,8 @@ async function run() {
         });
         console.info('Received diff from GitHub.');
         console.info(response.data);
-        // diff = new Diff(response.data);
-        // console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
+        diff = new Diff(response.data);
+        console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
     }
     catch (error) {
         (0, core_1.setFailed)((_d = error === null || error === void 0 ? void 0 : error.message) !== null && _d !== void 0 ? _d : "Unknown error");
@@ -30879,7 +30879,12 @@ async function run() {
         return;
     }
     let inlineComments;
-    // inlineComments = issues.map(group => new Comment(group));
+    const { issuesInDiff, issuesNotInDiff } = filterIssuesByDiff(diff, issues);
+    console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
+    console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
+    const groupedIssues = groupIssuesByLine(issuesInDiff);
+    inlineComments = groupedIssues.map((group) => new Comment(group));
+    console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
     // Add new comments to the PR
     // for (const comment of commentsToAdd) {
     //     try {
@@ -30919,6 +30924,30 @@ function parseAnalyzerOutputs(analyzeLog, workingDir) {
     }
     return issues;
 }
+function filterIssuesByDiff(diff, issues) {
+    const issuesInDiff = [];
+    const issuesNotInDiff = [];
+    for (const issue of issues) {
+        if (diff.fileHasChange(issue.file, issue.line)) {
+            issuesInDiff.push(issue);
+        }
+        else {
+            issuesNotInDiff.push(issue);
+        }
+    }
+    return { issuesInDiff, issuesNotInDiff };
+}
+function groupIssuesByLine(issues) {
+    const grouped = {};
+    issues.forEach(issue => {
+        const key = `${issue.file}:${issue.line}`;
+        if (!grouped[key]) {
+            grouped[key] = [];
+        }
+        grouped[key].push(issue);
+    });
+    return Object.values(grouped);
+}
 class Diff {
     constructor(data) {
         this.files = {};
@@ -30929,20 +30958,25 @@ class Diff {
         let currentFile = '';
         let lineCounter = 0;
         for (const line of diffLines) {
+            // --- a/src/main.py
+            // +++ b/src/main.py
             if (line.startsWith('+++ b/')) {
                 currentFile = line.replace('+++ b/', '');
                 lineCounter = 0;
             }
             else {
+                // @@ -1,14 +1,4 @@
                 const hunkHeaderMatch = line.match(/^@@ -\d+,?\d* \+(\d+),?\d* @@/);
                 if (hunkHeaderMatch) {
                     lineCounter = parseInt(hunkHeaderMatch[1], 10) - 1;
                 }
                 else if (line.startsWith('+')) {
+                    // 「+# 環境によって制御」などと記載された行
                     lineCounter++;
                     this.addFileChange(currentFile, line);
                 }
                 else if (!line.startsWith('-')) {
+                    // 「-# 環境によって設定制御」などと記載された行
                     lineCounter++;
                 }
             }
@@ -30953,6 +30987,9 @@ class Diff {
             this.files[fileName] = new DiffFile(fileName);
         }
         this.files[fileName].addChange(line);
+    }
+    fileHasChange(fileName, line) {
+        return this.files[fileName] && this.files[fileName].hasChange(line);
     }
 }
 class DiffFile {
