@@ -30852,7 +30852,6 @@ async function run() {
             body: body
         });
         console.log(`Number of issues exceeds maximum: ${issues.length}`);
-        return;
     }
     catch (error) {
         (0, core_1.setFailed)((_c = error === null || error === void 0 ? void 0 : error.message) !== null && _c !== void 0 ? _c : "Unknown error");

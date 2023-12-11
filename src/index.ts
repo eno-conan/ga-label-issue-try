@@ -60,7 +60,6 @@ export async function run() {
             body: body
         });
         console.log(`Number of issues exceeds maximum: ${issues.length}`);
-        return;
     }
     catch (error) {
         setFailed((error as Error)?.message ?? "Unknown error");
