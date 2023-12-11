@@ -90,28 +90,30 @@ export async function run() {
     let inlineComments;
     const { issuesInDiff, issuesNotInDiff } = filterIssuesByDiff(diff, issues);
     console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
-    // console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
+    console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
     const groupedIssues = groupIssuesByLine(issuesInDiff);
     inlineComments = groupedIssues.map((group: any) => new Comment(group));
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
 
     // Add new comments to the PR
     // for (const comment of commentsToAdd) {
-    //     try {
-    //         await octokit.rest.pulls.createReviewComment({
-    //             owner: context.repo.owner,
-    //             repo: context.repo.repo,
-    //             pull_number: context.issue.number,
-    //             commit_id: pullRequest.head.sha,
-    //             path: comment.path,
-    //             side: "RIGHT",
-    //             line: comment.line,
-    //             body: comment.body
-    //         });
-    //     } catch (error) {
-    //         setFailed((error as Error)?.message ?? "Unknown error");
-    //     }
-    // }
+    for (const comment of issuesNotInDiff) {
+        try {
+            await octokit.rest.pulls.createReviewComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                commit_id: pullRequest.head.sha,
+                // path: comment.path,
+                path: comment.file,
+                side: "RIGHT",
+                line: comment.line,
+                body: comment.message
+            });
+        } catch (error) {
+            setFailed((error as Error)?.message ?? "Unknown error");
+        }
+    }
 }
 
 if (!process.env.JEST_WORKER_ID) {
