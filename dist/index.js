@@ -30809,8 +30809,9 @@ const fs_1 = __nccwpck_require__(7147);
 //     }
 //     core.setFailed(error);
 // }
+// ================================
 async function run() {
-    var _a, _b;
+    var _a, _b, _c;
     const token = (0, core_1.getInput)("gh_token");
     const label = (0, core_1.getInput)("label");
     const analyzeLog = (0, core_1.getInput)("analyze_log");
@@ -30826,12 +30827,12 @@ async function run() {
         console.log(`Parsed issues: ${JSON.stringify(issues, null, 2)}`);
     }
     catch (error) {
-        console.error(`Failed to read analyze log: ${error.message}`);
-        (0, core_1.setFailed)((_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Unknown error");
+        (0, core_1.setFailed)(`Failed to read analyze log: ${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Unknown error"}`);
+        // setFailed((error as Error)?.message ?? "Unknown error");
         return;
     }
+    const octokit = (0, github_1.getOctokit)(token);
     try {
-        const octokit = (0, github_1.getOctokit)(token);
         await octokit.rest.issues.addLabels({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -30840,10 +30841,49 @@ async function run() {
         });
     }
     catch (error) {
-        (0, core_1.setFailed)((_b = error === null || error === void 0 ? void 0 : error.message) !== null && _b !== void 0 ? _b : "Unknown error");
+        (0, core_1.setFailed)(`Failed to set Label: ${(_b = error === null || error === void 0 ? void 0 : error.message) !== null && _b !== void 0 ? _b : "Unknown error"}`);
     }
+    const body = `Ruff Check commenter found ${issues.length} issues`;
+    try {
+        await octokit.rest.issues.createComment({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            issue_number: github_1.context.issue.number,
+            body: body
+        });
+        console.log(`Number of issues exceeds maximum: ${issues.length}`);
+        return;
+    }
+    catch (error) {
+        (0, core_1.setFailed)((_c = error === null || error === void 0 ? void 0 : error.message) !== null && _c !== void 0 ? _c : "Unknown error");
+        return;
+    }
+    let inlineComments;
+    // inlineComments = issues.map(group => new Comment(group));
+    // Add new comments to the PR
+    // for (const comment of commentsToAdd) {
+    //     try {
+    //         await octokit.rest.pulls.createReviewComment({
+    //             owner: context.repo.owner,
+    //             repo: context.repo.repo,
+    //             pull_number: context.issue.number,
+    //             commit_id: pullRequest.head.sha,
+    //             path: comment.path,
+    //             side: "RIGHT",
+    //             line: comment.line,
+    //             body: comment.body
+    //         });
+    //     } catch (error) {
+    //         setFailed((error as Error)?.message ?? "Unknown error");
+    //     }
+    // }
 }
 exports.run = run;
+if (!process.env.JEST_WORKER_ID) {
+    run();
+}
+// ================================
+// helper function and interface
 // set each item to Issue from log lines
 function parseAnalyzerOutputs(analyzeLog, workingDir) {
     const regex = /(.+):(\d+):(\d+):(.+)/g;
@@ -30859,8 +30899,17 @@ function parseAnalyzerOutputs(analyzeLog, workingDir) {
     }
     return issues;
 }
-if (!process.env.JEST_WORKER_ID) {
-    run();
+class Comment {
+    constructor(issue) {
+        this.path = issue.file;
+        this.line = issue.line;
+        this.body = '<table><thead><tr><th>Level</th><th>Message</th></tr></thead><tbody>';
+        // this.body += issues.map(issue => {
+        //     // return `<tr><td>${levelIcon[issue.level]}</td><td>${issue.message}</td></tr>`;
+        //     return `<tr><td>info</td><td>${issue.message}</td></tr>`;
+        // }).join('');
+        this.body += '</tbody></table><!-- Flutter Analyze Commenter: issue -->';
+    }
 }
 
 })();
