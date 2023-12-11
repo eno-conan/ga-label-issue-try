@@ -146,6 +146,7 @@ function filterIssuesByDiff(diff: Diff, issues: Issue[]) {
     const issuesNotInDiff: Issue[] = [];
 
     for (const issue of issues) {
+        console.log(issue)
         if (diff.fileHasChange(issue.file, issue.line)) {
             issuesInDiff.push(issue);
         } else {
@@ -218,7 +219,7 @@ class Diff {
     }
 
     fileHasChange(fileName: string, line: number) {
-        console.log(this.files)
+        console.log(`fileName: ${fileName},line: ${line}`)
         if (this.files[fileName]) {
             console.log(this.files[fileName].hasChange(line))
         }
