@@ -67,6 +67,27 @@ export async function run() {
         return;
     }
 
+    // Retrieve diff
+    let diff;
+    try {
+        const response = await octokit.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number,
+            mediaType: {
+                format: "diff",
+            }
+        });
+        console.info('Received diff from GitHub.');
+        console.info(response.data);
+        // diff = new Diff(response.data);
+        // console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
+    } catch (error) {
+        setFailed((error as Error)?.message ?? "Unknown error");
+        // logError(`Failed to retrieve diff: ${error.message}`);
+        return;
+    }
+
     let inlineComments;
     // inlineComments = issues.map(group => new Comment(group));
 
@@ -118,6 +139,63 @@ interface Issue {
     column: number;
     message: string;
 }
+
+class Diff {
+    files: any
+    constructor(data: any) {
+        this.files = {};
+        this.parse(data);
+    }
+
+    parse(data: any) {
+        const diffLines = data.split('\n');
+        let currentFile = '';
+        let lineCounter = 0;
+
+        for (const line of diffLines) {
+            if (line.startsWith('+++ b/')) {
+                currentFile = line.replace('+++ b/', '');
+                lineCounter = 0;
+            } else {
+                const hunkHeaderMatch = line.match(/^@@ -\d+,?\d* \+(\d+),?\d* @@/);
+                if (hunkHeaderMatch) {
+                    lineCounter = parseInt(hunkHeaderMatch[1], 10) - 1;
+                } else if (line.startsWith('+')) {
+                    lineCounter++;
+                    this.addFileChange(currentFile, line);
+                } else if (!line.startsWith('-')) {
+                    lineCounter++;
+                }
+            }
+        }
+    }
+
+    addFileChange(fileName: string, line: number) {
+        if (!this.files[fileName]) {
+            this.files[fileName] = new DiffFile(fileName);
+        }
+        this.files[fileName].addChange(line);
+    }
+}
+
+class DiffFile {
+    fileName: string;
+    changes: number[];
+    constructor(file: string) {
+        this.fileName = file;
+        this.changes = [];
+    }
+
+    addChange(line: number) {
+        this.changes.push(line);
+    }
+
+    hasChange(line: number) {
+        return this.changes.includes(line);
+    }
+}
+
+
 
 class Comment {
     path: string;
