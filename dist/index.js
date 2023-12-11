@@ -30822,9 +30822,9 @@ async function run() {
     let issues;
     try {
         const analyzerOutput = (0, fs_1.readFileSync)(analyzeLog, 'utf-8');
-        console.log(`Analyzer output: ${analyzerOutput}`);
+        // console.log(`Analyzer output: ${analyzerOutput}`);
         issues = parseAnalyzerOutputs(analyzerOutput, "workingDir");
-        console.log(`Parsed issues: ${JSON.stringify(issues, null, 2)}`);
+        // console.log(`Parsed issues: ${JSON.stringify(issues, null, 2)}`);
     }
     catch (error) {
         (0, core_1.setFailed)(`Failed to read analyze log: ${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Unknown error"}`);
@@ -30869,7 +30869,7 @@ async function run() {
             }
         });
         console.info('Received diff from GitHub.');
-        console.info(response.data);
+        // console.info(response.data);
         diff = new Diff(response.data);
         console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
     }
@@ -30881,7 +30881,7 @@ async function run() {
     let inlineComments;
     const { issuesInDiff, issuesNotInDiff } = filterIssuesByDiff(diff, issues);
     console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
-    console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
+    // console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
     const groupedIssues = groupIssuesByLine(issuesInDiff);
     inlineComments = groupedIssues.map((group) => new Comment(group));
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
