@@ -31,7 +31,7 @@ export async function run() {
     try {
         const analyzerOutput = readFileSync(analyzeLog, 'utf-8');
         // console.log(`Analyzer output: ${analyzerOutput}`);
-        issues = parseAnalyzerOutputs(analyzerOutput, "workingDir");
+        issues = parseAnalyzerOutputs(analyzerOutput);
         // console.log(`Parsed issues: ${JSON.stringify(issues, null, 2)}`);
     } catch (error) {
         setFailed(`Failed to read analyze log: ${(error as Error)?.message ?? "Unknown error"}`);
@@ -66,6 +66,12 @@ export async function run() {
         return;
     }
 
+    // interface OctokitResponse {
+    //     data: any;
+    //     headers: ResponseHeaders;
+    //     status: number;
+    //     url: string;
+    // }
     // Retrieve diff
     let diff: Diff;
     try {
@@ -78,7 +84,7 @@ export async function run() {
             }
         });
         console.info('Received diff from GitHub.');
-        // console.info(response.data);
+        console.info(response.data);
         diff = new Diff(response.data);
         console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
     } catch (error) {
@@ -92,11 +98,10 @@ export async function run() {
     console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
     // console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
     const groupedIssues = groupIssuesByLine(issuesInDiff);
-    inlineComments = groupedIssues.map((group: any) => new Comment(group));
+    inlineComments = groupedIssues.map((group: Issue[]) => new Comment(group));
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
 
     // Add new comments to the PR
-    // for (const comment of commentsToAdd) {
     for (const comment of inlineComments) {
         try {
             await octokit.rest.pulls.createReviewComment({
@@ -105,7 +110,6 @@ export async function run() {
                 pull_number: context.issue.number,
                 commit_id: pullRequest.head.sha,
                 path: comment.path,
-                // path: comment.file,
                 side: "RIGHT",
                 line: comment.line,
                 body: comment.body
@@ -124,18 +128,23 @@ if (!process.env.JEST_WORKER_ID) {
 
 // ================================
 
-// helper function and interface
+/*helper function and interface*/
 // set each item to Issue from log lines
-function parseAnalyzerOutputs(analyzeLog: string, workingDir: string) {
-    const regex = /(.+):(\d+):(\d+):(.+)/g;
+function parseAnalyzerOutputs(analyzeLog: string) {
+    const logFormatRegex = /(.+):(\d+):(\d+):(.+)/g;
+    const ruleIdRegex = /[A-Z]{1,4}[0-9]{3,4}/g;
     const issues: Issue[] = [];
     let match;
-    while ((match = regex.exec(analyzeLog))) {
+    while ((match = logFormatRegex.exec(analyzeLog))) {
+        const ruleIdAndMsg = match[4].trim()
+        const ruleId = ruleIdRegex.exec(ruleIdAndMsg)!
+        const message = ruleIdAndMsg.split(ruleIdRegex)
         issues.push({
             file: match[1],
             line: parseInt(match[2], 10),
             column: parseInt(match[3], 10),
-            message: match[4],
+            ruleId: ruleId[0],
+            message: message[1].trim(),
         })
     }
     return issues;
@@ -156,8 +165,20 @@ function filterIssuesByDiff(diff: Diff, issues: Issue[]) {
     return { issuesInDiff, issuesNotInDiff };
 }
 
+interface Issue {
+    file: string;
+    line: number;
+    column: number;
+    ruleId: string;
+    message: string;
+}
+
+interface Grouped {
+    [key: string]: Issue[];
+}
+
 function groupIssuesByLine(issues: Issue[]) {
-    const grouped: any = {};
+    const grouped: Grouped = {};
     issues.forEach(issue => {
         const key = `${issue.file}:${issue.line}`;
         if (!grouped[key]) {
@@ -166,13 +187,6 @@ function groupIssuesByLine(issues: Issue[]) {
         grouped[key].push(issue);
     });
     return Object.values(grouped);
-}
-
-interface Issue {
-    file: string;
-    line: number;
-    column: number;
-    message: string;
 }
 
 class Diff {
@@ -218,10 +232,6 @@ class Diff {
     }
 
     fileHasChange(fileName: string, line: number) {
-        console.log(`fileName: ${fileName},line: ${line}`)
-        if (this.files[fileName]) {
-            console.log(this.files[fileName].hasChange(line))
-        }
         return this.files[fileName] && this.files[fileName].hasChange(line);
     }
 }
@@ -243,18 +253,16 @@ class DiffFile {
     }
 }
 
-
-
 class Comment {
     path: string;
     line: number;
     body: string;
-    constructor(issues: any) {
+    constructor(issues: Issue[]) {
         this.path = issues[0].file;
         this.line = issues[0].line;
-        this.body = '<table><thead><tr><th>Level</th><th>Message</th></tr></thead><tbody>';
-        this.body += issues.map((issue: any) => {
-            return `<tr><td>info</td><td>${issue.message}</td></tr>`;
+        this.body = '<table><thead><tr><th>RuleId</th><th>Message</th></tr></thead><tbody>';
+        this.body += issues.map((issue: Issue) => {
+            return `<tr><td>${issue.ruleId}</td><td>${issue.message}</td></tr>`;
         }).join('');
         this.body += '</tbody></table><!-- Ruff Analyze Commenter: issue -->';
     }
