@@ -30997,7 +30997,9 @@ class Diff {
     fileHasChange(fileName, line) {
         console.log(this.files);
         console.log(this.files[fileName]);
-        console.log(this.files[fileName].hasChange(line));
+        if (this.files[fileName]) {
+            console.log(this.files[fileName].hasChange(line));
+        }
         return this.files[fileName] && this.files[fileName].hasChange(line);
     }
 }
