@@ -3,10 +3,12 @@ name: "Hello"
 on:
   pull_request:
     types: [opened, reopened]
-  #   workflow_dispatch:
 jobs:
   hello:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # required to add comment on PR
     steps:
       - uses: actions/checkout@v3
       - uses: ./

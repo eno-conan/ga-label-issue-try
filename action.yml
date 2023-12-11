@@ -1,19 +1,19 @@
-name: "Label new pull requests Try"
-description: "Add a label when a new PR is opened Try."
-author: "eno-conan"
-
+name: Label new pull requests Try
+description: Add a label when a new PR is opened Try.
+author: eno-conan
 inputs:
   gh-token:
-    description: 'The GitHub token for authentication.'
+    description: The GitHub token for authentication.
     required: true
   label:
-    description: 'The label to be applied to the pull request.'
+    description: The label to be applied to the pull request.
     required: true
-
+  analyze_log:
+    description: "Path to the Ruff Check log file"
+    required: true
 runs:
-  using: "node16"
-  main: "dist/index.js"
-
+  using: node20
+  main: dist/index.js
 branding:
-  icon: 'anchor'
-  color: 'blue'
+  icon: anchor
+  color: blue

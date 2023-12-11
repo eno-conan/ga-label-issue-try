@@ -30797,16 +30797,41 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
+const fs_1 = __nccwpck_require__(7147);
+// function logVerbose(message) {
+//     if (verboseLogging) {
+//         console.log(message);
+//     }
+// }
+// function logError(error) {
+//     if (verboseLogging) {
+//         console.error('Error:', error);
+//     }
+//     core.setFailed(error);
+// }
 async function run() {
-    var _a;
+    var _a, _b;
     const token = (0, core_1.getInput)("gh-token");
     const label = (0, core_1.getInput)("label");
+    const analyzeLog = (0, core_1.getInput)("analyze_log");
     const octokit = (0, github_1.getOctokit)(token);
     const pullRequest = github_1.context.payload.pull_request;
+    if (!pullRequest) {
+        throw new Error("This action can only be run on Pull Requests");
+    }
+    let issues;
     try {
-        if (!pullRequest) {
-            throw new Error("This action can only be run on Pull Requests");
-        }
+        const analyzerOutput = (0, fs_1.readFileSync)(analyzeLog, 'utf-8');
+        console.log(`Analyzer output: ${analyzerOutput}`);
+        issues = parseAnalyzerOutputs(analyzerOutput, "workingDir");
+        console.log(`Parsed issues: ${JSON.stringify(issues, null, 2)}`);
+    }
+    catch (error) {
+        console.error(`Failed to read analyze log: ${error.message}`);
+        (0, core_1.setFailed)((_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Unknown error");
+        return;
+    }
+    try {
         await octokit.rest.issues.addLabels({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -30815,10 +30840,25 @@ async function run() {
         });
     }
     catch (error) {
-        (0, core_1.setFailed)((_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Unknown error");
+        (0, core_1.setFailed)((_b = error === null || error === void 0 ? void 0 : error.message) !== null && _b !== void 0 ? _b : "Unknown error");
     }
 }
 exports.run = run;
+// set each item to Issue from log lines
+function parseAnalyzerOutputs(analyzeLog, workingDir) {
+    const regex = /(.+):(\d+):(\d+):(.+)/g;
+    const issues = [];
+    let match;
+    while ((match = regex.exec(analyzeLog))) {
+        issues.push({
+            file: match[1],
+            line: parseInt(match[2], 10),
+            column: parseInt(match[3], 10),
+            message: match[4],
+        });
+    }
+    return issues;
+}
 if (!process.env.JEST_WORKER_ID) {
     run();
 }
