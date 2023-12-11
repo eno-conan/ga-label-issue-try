@@ -92,7 +92,6 @@ export async function run() {
     console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
     // console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
     const groupedIssues = groupIssuesByLine(issuesInDiff);
-    console.log(groupedIssues);
     inlineComments = groupedIssues.map((group: any) => new Comment(group));
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
 
@@ -250,16 +249,13 @@ class Comment {
     path: string;
     line: number;
     body: string;
-    constructor(issue: any) {
-        console.log(issue)
-        this.path = issue.file;
-        this.line = issue.line;
+    constructor(issues: any) {
+        this.path = issues[0].file;
+        this.line = issues[0].line;
         this.body = '<table><thead><tr><th>Level</th><th>Message</th></tr></thead><tbody>';
-        this.body += `<tr><td>levelIcon</td><td>${issue.message}</td></tr>`
-        // this.body += issues.map(issue => {
-        //     // return `<tr><td>${levelIcon[issue.level]}</td><td>${issue.message}</td></tr>`;
-        //     return `<tr><td>info</td><td>${issue.message}</td></tr>`;
-        // }).join('');
+        this.body += issues.map((issue: any) => {
+            return `<tr><td>info</td><td>${issue.message}</td></tr>`;
+        }).join('');
         this.body += '</tbody></table><!-- Ruff Analyze Commenter: issue -->';
     }
 }
