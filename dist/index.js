@@ -30881,8 +30881,9 @@ async function run() {
     let inlineComments;
     const { issuesInDiff, issuesNotInDiff } = filterIssuesByDiff(diff, issues);
     console.info(`Issues in Diff: ${JSON.stringify(issuesInDiff, null, 2)}`);
-    console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
+    // console.info(`Issues not in Diff: ${JSON.stringify(issuesNotInDiff, null, 2)}`);
     const groupedIssues = groupIssuesByLine(issuesInDiff);
+    console.log(groupedIssues);
     inlineComments = groupedIssues.map((group) => new Comment(group));
     console.info(`Inline comments: ${JSON.stringify(inlineComments, null, 2)}`);
     // Add new comments to the PR
@@ -30932,7 +30933,6 @@ function filterIssuesByDiff(diff, issues) {
     const issuesInDiff = [];
     const issuesNotInDiff = [];
     for (const issue of issues) {
-        console.log(issue);
         if (diff.fileHasChange(issue.file, issue.line)) {
             issuesInDiff.push(issue);
         }
@@ -31008,7 +31008,6 @@ class DiffFile {
     }
     addChange(line) {
         this.changes.push(line);
-        console.log(this.changes);
     }
     hasChange(line) {
         return this.changes.includes(line);
@@ -31016,9 +31015,11 @@ class DiffFile {
 }
 class Comment {
     constructor(issue) {
+        console.log(issue);
         this.path = issue.file;
         this.line = issue.line;
         this.body = '<table><thead><tr><th>Level</th><th>Message</th></tr></thead><tbody>';
+        this.body += `<tr><td>levelIcon</td><td>${issue.message}</td></tr>`;
         // this.body += issues.map(issue => {
         //     // return `<tr><td>${levelIcon[issue.level]}</td><td>${issue.message}</td></tr>`;
         //     return `<tr><td>info</td><td>${issue.message}</td></tr>`;
