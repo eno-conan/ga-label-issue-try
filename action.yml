@@ -8,7 +8,7 @@ inputs:
   label:
     description: The label to be applied to the pull request.
     required: true
-  analyze_log:
+  analyze-log:
     description: "Path to the Ruff Check log file"
     required: true
 runs:

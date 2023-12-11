@@ -19,9 +19,8 @@ import { readFileSync } from 'fs';
 export async function run() {
     const token = getInput("gh-token");
     const label = getInput("label");
-    const analyzeLog = getInput("analyze_log");
+    const analyzeLog = getInput("analyze-log");
 
-    const octokit = getOctokit(token);
     const pullRequest = context.payload.pull_request;
 
     if (!pullRequest) {
@@ -41,6 +40,7 @@ export async function run() {
     }
 
     try {
+        const octokit = getOctokit(token);
         await octokit.rest.issues.addLabels({
             owner: context.repo.owner,
             repo: context.repo.repo,

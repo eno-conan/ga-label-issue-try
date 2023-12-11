@@ -30813,8 +30813,7 @@ async function run() {
     var _a, _b;
     const token = (0, core_1.getInput)("gh-token");
     const label = (0, core_1.getInput)("label");
-    const analyzeLog = (0, core_1.getInput)("analyze_log");
-    const octokit = (0, github_1.getOctokit)(token);
+    const analyzeLog = (0, core_1.getInput)("analyze-log");
     const pullRequest = github_1.context.payload.pull_request;
     if (!pullRequest) {
         throw new Error("This action can only be run on Pull Requests");
@@ -30832,6 +30831,7 @@ async function run() {
         return;
     }
     try {
+        const octokit = (0, github_1.getOctokit)(token);
         await octokit.rest.issues.addLabels({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
