@@ -30811,7 +30811,7 @@ const fs_1 = __nccwpck_require__(7147);
 // }
 // ================================
 async function run() {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const token = (0, core_1.getInput)("gh_token");
     const label = (0, core_1.getInput)("label");
     const analyzeLog = (0, core_1.getInput)("analyze_log");
@@ -30858,6 +30858,27 @@ async function run() {
         (0, core_1.setFailed)((_c = error === null || error === void 0 ? void 0 : error.message) !== null && _c !== void 0 ? _c : "Unknown error");
         return;
     }
+    // Retrieve diff
+    let diff;
+    try {
+        const response = await octokit.rest.pulls.get({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            pull_number: github_1.context.issue.number,
+            mediaType: {
+                format: "diff",
+            }
+        });
+        console.info('Received diff from GitHub.');
+        console.info(response.data);
+        // diff = new Diff(response.data);
+        // console.log(`Diff: ${JSON.stringify(diff, null, 2)}`);
+    }
+    catch (error) {
+        (0, core_1.setFailed)((_d = error === null || error === void 0 ? void 0 : error.message) !== null && _d !== void 0 ? _d : "Unknown error");
+        // logError(`Failed to retrieve diff: ${error.message}`);
+        return;
+    }
     let inlineComments;
     // inlineComments = issues.map(group => new Comment(group));
     // Add new comments to the PR
@@ -30898,6 +30919,54 @@ function parseAnalyzerOutputs(analyzeLog, workingDir) {
         });
     }
     return issues;
+}
+class Diff {
+    constructor(data) {
+        this.files = {};
+        this.parse(data);
+    }
+    parse(data) {
+        const diffLines = data.split('\n');
+        let currentFile = '';
+        let lineCounter = 0;
+        for (const line of diffLines) {
+            if (line.startsWith('+++ b/')) {
+                currentFile = line.replace('+++ b/', '');
+                lineCounter = 0;
+            }
+            else {
+                const hunkHeaderMatch = line.match(/^@@ -\d+,?\d* \+(\d+),?\d* @@/);
+                if (hunkHeaderMatch) {
+                    lineCounter = parseInt(hunkHeaderMatch[1], 10) - 1;
+                }
+                else if (line.startsWith('+')) {
+                    lineCounter++;
+                    this.addFileChange(currentFile, line);
+                }
+                else if (!line.startsWith('-')) {
+                    lineCounter++;
+                }
+            }
+        }
+    }
+    addFileChange(fileName, line) {
+        if (!this.files[fileName]) {
+            this.files[fileName] = new DiffFile(fileName);
+        }
+        this.files[fileName].addChange(line);
+    }
+}
+class DiffFile {
+    constructor(file) {
+        this.fileName = file;
+        this.changes = [];
+    }
+    addChange(line) {
+        this.changes.push(line);
+    }
+    hasChange(line) {
+        return this.changes.includes(line);
+    }
 }
 class Comment {
     constructor(issue) {
