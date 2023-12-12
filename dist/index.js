@@ -30927,11 +30927,12 @@ function parseAnalyzerOutputs(analyzeLog) {
         const ruleIdAndMsg = match[4].trim();
         const ruleId = ruleIdRegex.exec(ruleIdAndMsg);
         const message = ruleIdAndMsg.split(ruleIdRegex);
+        console.log(ruleId);
         issues.push({
             file: match[1],
             line: parseInt(match[2], 10),
             column: parseInt(match[3], 10),
-            ruleId: ruleId[0],
+            ruleId: "ruleId[0]",
             message: message[1].trim(),
         });
     }
