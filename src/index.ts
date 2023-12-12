@@ -132,13 +132,15 @@ if (!process.env.JEST_WORKER_ID) {
 // set each item to Issue from log lines
 function parseAnalyzerOutputs(analyzeLog: string) {
     const logFormatRegex = /(.+):(\d+):(\d+):(.+)/g;
-    const ruleIdRegex = /[A-Z]{1,4}[0-9]{3,4}/g;
+    const ruleIdRegex = /[A-Z]{1,4}[0-9]{3,4}/;
     const issues: Issue[] = [];
     let match;
     while ((match = logFormatRegex.exec(analyzeLog))) {
-        console.log(`match: ${match}`)
+        console.log(`match: ${match[4].trim()}`)
         const ruleIdAndMsg = match[4].trim()
-        const ruleId = ruleIdRegex.exec(ruleIdAndMsg)!
+        console.log(ruleIdAndMsg)
+        const ruleId = ruleIdRegex.exec(ruleIdAndMsg)
+        console.log(ruleId)
         const message = ruleIdAndMsg.split(ruleIdRegex)
         issues.push({
             file: match[1],
