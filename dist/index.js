@@ -30920,7 +30920,7 @@ if (!process.env.JEST_WORKER_ID) {
 // set each item to Issue from log lines
 function parseAnalyzerOutputs(analyzeLog) {
     const logFormatRegex = /(.+):(\d+):(\d+):(.+)/g;
-    const ruleIdRegex = /[A-Z]{1,4}[0-9]{3,4}/;
+    const ruleIdRegex = /[A-Z]{1,4}[0-9]{3,4}/g;
     const issues = [];
     let match;
     while ((match = logFormatRegex.exec(analyzeLog))) {
